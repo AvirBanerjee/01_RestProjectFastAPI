@@ -1,0 +1,32 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <title>FastAPI User Manager</title>
+
+    <link rel="stylesheet" href="style.css" />
+  </head>
+
+  <body>
+    <div class="container">
+      <h2>FastAPI User CRUD</h2>
+
+      <h3>Create User</h3>
+
+      <input type="text" id="name" placeholder="Enter Name" />
+      <input type="email" id="email" placeholder="Enter Email" />
+
+      <button onclick="createUser()">Add User</button>
+
+      <hr />
+
+      <h3>User List</h3>
+
+      <button onclick="getUsers()">Load Users</button>
+
+      <div id="users"></div>
+    </div>
+
+    <script src="script.js"></script>
+  </body>
+</html>

@@ -109,6 +109,9 @@ pwd_context=CryptContext(
     deprecated="auto"
 )
 
+def hash_password(password:str) ->str:
+    return pwd_context.hash(password)
+
 oauth2_scheme=OAuth2PasswordBearer(
     tokenUrl="/api/v1/login"
 )
@@ -155,7 +158,7 @@ def register_user(user:UserCreate,db:Session=Depends(get_db)):
     if existing:
         raise HTTPException(status_code=400,detail="User already exixts")
     new_user=UserDB(
-        fullname=user.fullname
+        fullname=user.fullname,
         email=user.email,
         password=hash_password(user.password)
     )
@@ -182,3 +185,90 @@ def login_user(
         "access_token":access_token,
         "token_type":"bearer"
     }
+
+@app.get(API_V1 + "/dashboard")
+def dashboard(current_user:UserDB=Depends(get_current_user)):
+    return{
+        "fullname":current_user.fullname,
+        "email":current_user.email,
+        "total_employs":len(current_user.employs)
+    }
+
+#creating employee
+@app.post(API_V1+"/employ")
+def create_employ(
+    employ:EmployCreate,
+    db: Session =Depends(get_db),
+    current_user:UserDB =Depends(get_current_user)
+    ):
+    new_employ=EmployDB(
+        fullname=employ.fullname,
+        email=employ.email,
+        isOnProject=employ.isOnProject,
+        experience=employ.experience,
+        completed=employ.completed,
+        description=employ.description,
+        owner=current_user
+    )
+    db.add(new_employ)
+    db.commit()
+
+    return{
+        "message":"employ created succesfully"
+        }
+
+# get all users
+@app.get(API_V1 + "/employs")
+def get_employs(
+    db: Session = Depends(get_db),
+    current_user:UserDB = Depends(get_current_user)
+    ):
+    return current_user.employs
+
+# get single user
+@app.get(API_V1 + "/employ/{id}")
+def get_employ(
+    id:int,
+    db: Session = Depends(get_db),
+    current_user:UserDB = Depends(get_current_user)
+    ):
+    employ=db.query(EmployDB).filter(EmployDB.id == id).first()
+    if not employ:
+        raise HTTPException(status_code=404,detail="Employee not found")
+    return employ
+
+# update employe
+@app.put(API_V1 +"/employ/{id}")
+def update_employ(
+    id:int,
+    data:EmployCreate,
+    db: Session = Depends(get_db),
+    current_user:UserDB = Depends(get_current_user)
+    ):
+    employ=db.query(EmployDB).filter(EmployDB.id == id).first()
+    if not employ:
+        raise HTTPException(status_code=404,detail="Employee not found")
+    employ.fullname=data.fullname,
+    employ.email=data.email,
+    employ.isOnProject=data.isOnProject,
+    employ.experience=data.experience,
+    employ.completed=data.completed,
+    employ.description=data.description,
+    
+    db.commit()
+    return { "message":"employee updated successfully"}
+
+# Delete employee
+@app.delete(API_V1 + "/employ/{id}")
+def get_employ(
+    id:int,
+    db: Session = Depends(get_db),
+    current_user:UserDB = Depends(get_current_user)
+    ):
+    employ=db.query(EmployDB).filter(EmployDB.id == id).first()
+    if not employ:
+        raise HTTPException(status_code=404,detail="Employee not found")
+    db.delete(employ)
+    db.commit()
+
+    return {"message":"Employee deleted succesfull"}

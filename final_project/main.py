@@ -1,10 +1,10 @@
-from fastapi import FastApi,HTTPException,Depends
+from fastapi import FastAPI,HTTPException,Depends
 from fastapi.middleware.cors import CORSMiddleware
 
-from fastapi.security import OAuth2PasswordBearer ,OAuth2PasswordRequestForm
+from fastapi.security import OAuth2PasswordBearer,OAuth2PasswordRequestForm
 from pydantic import BaseModel
 from typing import List
-from sqlalchemy import create_engine,Column,Integer,String,Boolean,Foreignkey
+from sqlalchemy import create_engine,Column,Integer,String,Boolean,ForeignKey
 from sqlalchemy.orm import declarative_base ,sessionmaker,Session,relationship
 
 from jose import jwt,JWTError
@@ -12,7 +12,7 @@ from passlib.context import CryptContext
 from datetime import datetime,timedelta
 
 #APP
-app=FastApi(
+app=FastAPI(
     title="Employee Managment Api",
     version="1.0"
 )
@@ -20,7 +20,7 @@ app=FastApi(
 #CORS
 app.add_middleware(
     CORSMiddleware,
-    allow_orgins=["*"],#Needs to be changed in future
+    allow_origins=["*"],#Needs to be changed in future #typo in allow_orgins
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"]
@@ -49,23 +49,23 @@ class UserDB(Base):
 
     id=Column(Integer,primary_key=True,index=True)
     fullname=Column(String)
-    email=Column(String,unqiue=True)
+    email=Column(String,unique=True)
     password=Column(String)
 
-    employs=relationship("EmployDB",back_populated="owner")
+    employs=relationship("EmployDB",back_populates="owner") # back_populates typo error
 
 class EmployDB(Base):
     __tablename__="employs"
 
     id=Column(Integer,primary_key=True,index=True)
     fullname=Column(String)
-    email=Column(String,unqiue=True)
+    email=Column(String,unique=True) #unique typo error
     isOnProject=Column(Boolean)
     experience=Column(Integer)
     completed=Column(Integer)
     description=Column(String)
 
-    user_id=Column(Integer,Foreignkey("user_id"))
+    user_id = Column(Integer, ForeignKey("users.id")) # changed
     owner=relationship("UserDB",back_populates="employs")
 
 Base.metadata.create_all(bind=engine)
@@ -73,8 +73,9 @@ Base.metadata.create_all(bind=engine)
 # schemas
 class UserCreate(BaseModel):
     id:int
-    fullname:str
-    email:str
+    fullname: str
+    email: str
+    password: str # password added
 
     class Config:
         orm_mode=True
@@ -95,7 +96,7 @@ class EmployCreate(BaseModel):
     description:str
 
 class Token(BaseModel):
-    access_token=str
+    access_token:str # changed = with :
     token_type:str
 
 # security 
@@ -105,7 +106,7 @@ ALGORITHM="HS256"
 ACCESS_TOKEN_EXPIRE_MINUTES=60
 
 pwd_context=CryptContext(
-    schemes=["bcrpyt"],
+    schemes=["bcrypt"], #typo of bcryt
     deprecated="auto"
 )
 
@@ -248,19 +249,20 @@ def update_employ(
     employ=db.query(EmployDB).filter(EmployDB.id == id).first()
     if not employ:
         raise HTTPException(status_code=404,detail="Employee not found")
-    employ.fullname=data.fullname,
-    employ.email=data.email,
-    employ.isOnProject=data.isOnProject,
-    employ.experience=data.experience,
-    employ.completed=data.completed,
-    employ.description=data.description,
+    #removed commas bcoz it was making it tupple insted of assignment
+    employ.fullname=data.fullname
+    employ.email=data.email
+    employ.isOnProject=data.isOnProject
+    employ.experience=data.experience
+    employ.completed=data.completed
+    employ.description=data.description
     
     db.commit()
     return { "message":"employee updated successfully"}
 
 # Delete employee
 @app.delete(API_V1 + "/employ/{id}")
-def get_employ(
+def delete_employ( # name change from get_employ
     id:int,
     db: Session = Depends(get_db),
     current_user:UserDB = Depends(get_current_user)

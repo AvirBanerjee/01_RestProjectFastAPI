@@ -273,15 +273,3 @@ REST is about:
 It creates scalable, maintainable, and predictable APIs.
 
 ---
-
-# 🚀 For Teaching Use
-
-You can use this document to explain:
-
-- REST basics
-- Architecture constraints
-- Resource design
-- HTTP standards
-- API best practices
-
----
